@@ -4,6 +4,7 @@ import autosize from "autosize";
 import { getDocText } from "cm/editorUtils";
 import Checkbox from "components/checkbox";
 import Sidebar, { preventSlide } from "components/sidebar";
+import confirm from "dialogs/confirm";
 import escapeStringRegexp from "escape-string-regexp";
 import Reactive from "html-tag-js/reactive";
 import Ref from "html-tag-js/ref";
@@ -933,6 +934,18 @@ async function replaceAll() {
 	if (!search || !replace) return;
 	const regex = toRegex(search, options);
 	if (!regex) return;
+	if (!filesSearched.length) return;
+
+	// Replace-all rewrites files on disk and can't be undone, so ask first.
+	const confirmed = await confirm(
+		strings.confirm,
+		strings["replace all confirm"]
+			.replace("{matches}", resultOverview.matchesCount)
+			.replace("{files}", resultOverview.filesCount)
+			// Function form so "$&" etc. in the user's text isn't treated as a pattern.
+			.replace("{replacement}", () => replace),
+	);
+	if (!confirmed) return;
 
 	replacing = true;
 	activeReplaceTasks = 0;
